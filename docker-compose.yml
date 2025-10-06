@@ -1,0 +1,76 @@
+services:
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    networks:
+      - ecommerce
+
+  rabbitmq:
+    image: rabbitmq:3.8-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - ecommerce
+
+  auth:
+    build: ./auth
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./auth/.env
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/auth_db
+    depends_on:
+      - mongo
+    networks:
+      - ecommerce
+
+  product:
+    build: ./product
+    ports:
+      - "3001:3001"
+    depends_on:
+      - rabbitmq
+      - mongo
+    env_file:
+      - ./product/.env
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - MONGO_URI=mongodb://mongo:27017/product_db
+    networks:
+      - ecommerce
+
+  order:
+    build: ./order
+    ports:
+      - "3002:3002"
+    depends_on:
+      - rabbitmq
+      - mongo
+    env_file:
+      - ./order/.env
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - MONGO_URI=mongodb://mongo:27017/order_db
+    networks:
+      - ecommerce
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "3003:3003"
+    depends_on:
+      - auth
+      - product
+      - order
+    networks:
+      - ecommerce
+
+networks:
+  ecommerce:
