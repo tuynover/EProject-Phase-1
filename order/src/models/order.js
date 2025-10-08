@@ -1,9 +1,14 @@
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
+  orderId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
   products: [{
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'products',
+    ref: 'Product',
     required: true,
   }],
   totalPrice: {
@@ -11,11 +16,20 @@ const orderSchema = new mongoose.Schema({
     required: true,
     min: 0,
   },
+  user: {   // thêm user để lưu username hoặc userId từ token
+    type: String,
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'completed', 'cancelled'],
+    default: 'pending',
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-}, { collection : 'orders' });
+}, { collection: 'orders' });
 
 const Order = mongoose.model('Order', orderSchema);
 
